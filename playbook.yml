@@ -1,0 +1,100 @@
+- hosts:
+  - all
+  sudo: true
+  gather_facts: false
+  vars:
+  - user: "{{ lookup('env', 'USER') }}"
+  - mail_address: root@example.com
+  - domain: something.example.net
+
+  roles:
+  - golang
+
+  tasks:
+  ## selinux & firewalld
+  - command: setenforce 0
+    tags: selinux
+
+  - lineinfile: dest=/etc/selinux/config regexp=^SELINUX= line=SELINUX=disabled
+    tags: selinux
+
+  - service: name=firewalld state=stopped enabled=no
+    tags: firewalld
+
+  ## nginx
+  - copy: src=nginx.repo dest=/etc/yum.repos.d/nginx.repo
+    tags: nginx.repo
+
+  - yum: name=nginx
+    tags: nginx.yum
+
+  - file: dest=/etc/nginx/sites-available state=directory mode=0755 owner=nginx group=nginx
+    tags: nginx.conf
+
+  - template: src={{ domain }}.conf dest=/etc/nginx/sites-available/{{ domain }}.conf
+    tags: nginx.conf
+
+  - file: dest=/etc/nginx/sites-enabled state=directory mode=0755 owner=nginx group=nginx
+    tags: nginx.conf
+
+  - file: src=/etc/nginx/sites-available/{{ domain }}.conf
+          dest=/etc/nginx/sites-enabled/{{ domain }}.conf
+          state=link mode=0755 owner=nginx group=nginx
+    tags: nginx.conf
+
+  - file: dest=/var/lib/nginx/{{ domain }} state=directory mode=0755 owner=nginx group=nginx
+    tags:
+      - nginx.conf
+      - nginx.conf.root
+
+  - template: src=./nginx.conf dest=/etc/nginx/nginx.conf mode=0755 owner=nginx group=nginx
+    tags:
+      - nginx.conf
+      - nginx.conf.etc
+
+  ## Let's encrypt
+  - yum: name=git
+    tags: git
+
+  - git: repo=https://github.com/letsencrypt/letsencrypt.git
+         dest=/home/{{ user }}/letsencrypt version=master accept_hostkey=yes
+    tags: git.clone
+
+  - file: dest=/home/{{ user }}/letsencrypt recurse=yes owner={{ user }} group={{ user }}
+    tags: git.chown
+
+  - command: /home/{{ user }}/letsencrypt/letsencrypt-auto --help
+    tags: letsencrypt-auto.help
+
+  - service: name=nginx state=restarted
+    tags:
+      - nginx.service
+
+  - command: /home/{{ user }}/letsencrypt/letsencrypt-auto
+             certonly --webroot --webroot-path /var/lib/nginx/{{ domain }}
+             -d "{{ domain }}" --agree-tos -m "{{ mail_address }}"
+    tags: letsencrypt-auto.webroot
+
+  - file: dest=/etc/ssl/private state=directory mode=0755 owner=root group=root
+    tags: openssl.dhparam
+
+  - command: /bin/openssl dhparam -out /etc/ssl/private/dhparam.pem 2048
+    tags: openssl.dhparam
+
+  - template: src=./ssl.conf dest=/etc/nginx/conf.d/ssl.conf mode=0755 owner=nginx group=nginx
+    notify: nginx restart
+    tags:
+      - nginx.conf
+      - nginx.conf.ssl
+
+  - yum: name={{ item }}
+    with_items:
+    - vim
+    tags: pkgs
+
+  #- command: su -u "{{ user }}" -c "curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.0/install.sh | bash"
+
+  handlers:
+  - name: nginx restart
+    service: name=nginx state=restarted
+

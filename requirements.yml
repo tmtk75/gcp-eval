@@ -1,0 +1,5 @@
+# from galaxy
+- src: https://github.com/tmtk75/ansible-golang
+  version: master
+  name: golang
+  path: roles
