@@ -1,6 +1,7 @@
 .e
 .*.swp
 credentials.json
+credentials.sh
 *.tfstate*
 
 ssh-config
