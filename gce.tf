@@ -1,5 +1,5 @@
 variable instance_name { default = "test-gce" }
-variable region        { default = "asia-east1" }
+variable region        { default = "asia-northeast1" }
 variable cidr_home {}
 
 provider "google" {

@@ -1,14 +1,14 @@
 .PHONEY: ping playbook ssh plan apply
 
 ping: ssh-config test-gce.pem
-	ansible -i "test-gce.asia-east1-c.gcp-eval," -m ping all
+	ansible -i "test-gce.asia-northeast1-c.gcp-eval," -m ping all
 
 playbook: ssh-config test-gce.pem
-	ansible-playbook -i "test-gce.asia-east1-c.gcp-eval," playbook.yml \
+	ansible-playbook -i "test-gce.asia-northeast1-c.gcp-eval," playbook.yml \
 	  -e domain=$(domain) -e mail_address=$(mail_address)
 
 ssh: ssh-config test-gce.pem
-	ssh -F ssh-config test-gce.asia-east1-c.gcp-eval
+	ssh -F ssh-config test-gce.asia-northeast1-c.gcp-eval
 
 ssh-with-gcloud: ssh-config test-gce.pem
 	gcloud compute ssh test-gce
@@ -16,13 +16,16 @@ ssh-with-gcloud: ssh-config test-gce.pem
 ssh-config test-gce.pem:
 	gcloud compute config-ssh --ssh-config-file ssh-config --ssh-key-file test-gce.pem
 
-options=-var cidr_home="`curl -s http://ipecho.net/plain`/32"
+options := -var 'cidr_home="'`curl -s http://ipecho.net/plain`/32'"'
 
 plan:
 	terraform plan $(options) 
 
 apply:
 	terraform apply $(options)
+
+destroy:
+	terraform destroy $(options)
 
 distclean:
 	rm -f ssh-config test-gce.pem test-gce.pem.pub
