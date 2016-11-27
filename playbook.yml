@@ -8,7 +8,7 @@
   - domain: something.example.net
 
   roles:
-  - golang
+  #- golang
 
   tasks:
   ## selinux & firewalld

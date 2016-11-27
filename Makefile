@@ -13,7 +13,7 @@ ssh: ssh-config test-gce.pem
 ssh-with-gcloud: ssh-config test-gce.pem
 	gcloud compute ssh test-gce
 
-ssh-config test-gce.pem:
+ssh-config test-gce.pem: terraform.tfstate
 	gcloud compute config-ssh --ssh-config-file ssh-config --ssh-key-file test-gce.pem
 
 options := -var 'cidr_home="'`curl -s http://ipecho.net/plain`/32'"'

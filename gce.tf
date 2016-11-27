@@ -12,7 +12,7 @@ resource "google_compute_network" "default" {
     name = "${var.instance_name}"
 }
 
-resource "google_compute_subnetwork" "default-asia-east1" {
+resource "google_compute_subnetwork" "default-asia-northeast1" {
     name          = "default-${var.region}"
     ip_cidr_range = "10.1.0.0/24"
     network       = "${google_compute_network.default.self_link}"
@@ -55,8 +55,8 @@ resource "google_compute_instance" "default" {
     }
 
     network_interface {
-        subnetwork = "${google_compute_subnetwork.default-asia-east1.name}"
-	access_config {
+        subnetwork = "${google_compute_subnetwork.default-asia-northeast1.name}"
+        access_config {
 	    nat_ip = "${google_compute_address.default.address}"
 	}
     }
