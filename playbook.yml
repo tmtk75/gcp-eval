@@ -1,11 +1,18 @@
 - hosts:
   - all
-  sudo: true
+  become: true
   gather_facts: false
   vars:
   - user: "{{ lookup('env', 'USER') }}"
-  - mail_address: root@example.com
-  - domain: something.example.net
+
+  vars_prompt:
+  - name: mail_address
+    prompt: your mail address used for let's encrypt
+    private: no
+
+  - name: domain
+    prompt: your domain used for let's encrypt
+    private: no
 
   roles:
   #- golang

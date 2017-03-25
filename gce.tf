@@ -1,18 +1,19 @@
 variable instance_name { default = "test-gce" }
-variable region        { default = "asia-northeast1" }
+variable region        { default = "us-west1" }
+variable zone          { default = "us-west1-b" }
 variable cidr_home {}
 
 provider "google" {
     credentials = "${file("./credentials.json")}"
     project     = "gcp-eval"
-    region      = "${var.region}-c"
+    region      = "${var.zone}"
 }
 
 resource "google_compute_network" "default" {
     name = "${var.instance_name}"
 }
 
-resource "google_compute_subnetwork" "default-asia-northeast1" {
+resource "google_compute_subnetwork" "default" {
     name          = "default-${var.region}"
     ip_cidr_range = "10.1.0.0/24"
     network       = "${google_compute_network.default.self_link}"
@@ -47,7 +48,7 @@ resource "google_compute_firewall" "ssh" {
 resource "google_compute_instance" "default" {
     name         = "${var.instance_name}"
     machine_type = "f1-micro"
-    zone         = "${var.region}-c"
+    zone         = "${var.zone}"
     tags         = ["http-server"]
 
     disk {
@@ -55,7 +56,7 @@ resource "google_compute_instance" "default" {
     }
 
     network_interface {
-        subnetwork = "${google_compute_subnetwork.default-asia-northeast1.name}"
+        subnetwork = "${google_compute_subnetwork.default.name}"
         access_config {
 	    nat_ip = "${google_compute_address.default.address}"
 	}

@@ -1,38 +1,53 @@
-.PHONEY: ping playbook ssh plan apply
+.DEFAULT_GOAL := help
 
+##
+## ansible
+##
+.PHONY: ping
 ping: ssh-config test-gce.pem
-	ansible -i "test-gce.asia-northeast1-c.gcp-eval," -m ping all
+	ansible -i "test-gce.us-west1-b.gcp-eval," -m ping all
 
+.PHONY: playbook
 playbook: ssh-config test-gce.pem
-	ansible-playbook -i "test-gce.asia-northeast1-c.gcp-eval," playbook.yml \
-	  -e domain=$(domain) -e mail_address=$(mail_address)
+	ansible-playbook \
+		-i "test-gce.us-west1-b.gcp-eval," \
+		playbook.yml
 
+.PHONY: ssh
 ssh: ssh-config test-gce.pem
-	ssh -F ssh-config test-gce.asia-northeast1-c.gcp-eval
+	ssh -F ssh-config test-gce.us-west1-b.gcp-eval
 
+.PHONY: ssh-with-gcloud
 ssh-with-gcloud: ssh-config test-gce.pem
 	gcloud compute ssh test-gce
 
-ssh-config test-gce.pem: terraform.tfstate
-	gcloud compute config-ssh --ssh-config-file ssh-config --ssh-key-file test-gce.pem
+ssh-config: terraform.tfstate
+	gcloud compute config-ssh \
+		--ssh-config-file ssh-config \
+		--ssh-key-file test-gce.pem
 
+##
+## terraform
+##
 options := -var 'cidr_home="'`curl -s http://ipecho.net/plain`/32'"'
 
-plan:
+.PHONY: plan
+plan:  ## terraform plan with cidr_home
 	terraform plan $(options) 
 
-apply:
+.PHONY: apply
+apply:  ## terraform apply with cidr_home
 	terraform apply $(options)
 
-destroy:
+.PHONY: destroy
+destroy:  ## terraform destroy with cidr_home
 	terraform destroy $(options)
 
+.PHONY: distclean
 distclean:
 	rm -f ssh-config test-gce.pem test-gce.pem.pub
 
-###
-ansible: .e/bin/ansible
-.e/bin/ansible: .e/bin/pip
-	.e/bin/pip install ansible==1.9.5
-.e/bin/pip:
-	virtualenv .e
+.PHONY: help
+help:
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+	| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'
